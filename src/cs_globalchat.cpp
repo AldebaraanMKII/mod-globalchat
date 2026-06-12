@@ -72,7 +72,7 @@ public:
             return true;
         }
 
-        sGlobalChatMgr->SendGlobalChat(session, message.data());
+        sGlobalChatMgr->SendGlobalChat(session, message);
         return true;
     }
 
@@ -82,7 +82,7 @@ public:
             return false;
 
         WorldSession* session = handler->GetSession();
-        sGlobalChatMgr->SendGlobalChat(session, message.data(), TEAM_ALLIANCE);
+        sGlobalChatMgr->SendGlobalChat(session, message, TEAM_ALLIANCE);
         return true;
     }
 
@@ -92,7 +92,7 @@ public:
             return false;
 
         WorldSession* session = handler->GetSession();
-        sGlobalChatMgr->SendGlobalChat(session, message.data(), TEAM_HORDE);
+        sGlobalChatMgr->SendGlobalChat(session, message, TEAM_HORDE);
         return true;
     }
 

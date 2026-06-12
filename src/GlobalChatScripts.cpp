@@ -34,7 +34,7 @@ class GlobalChat_Player : public PlayerScript
 public:
     GlobalChat_Player() : PlayerScript("GlobalChat_Player") { }
 
-    void OnLogin(Player* player)
+    void OnPlayerLogin(Player* player) override
     {
         if (sGlobalChatMgr->GlobalChatEnabled)
         {
@@ -59,25 +59,26 @@ public:
         }
     }
 
-    void OnSave(Player* player)
+    void OnPlayerSave(Player* player) override
     {
         sGlobalChatMgr->SavePlayerData(player);
     }
 
-    void OnChat(Player* player, uint32 /*type*/, uint32 lang, std::string& msg, Channel* channel)
+    bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 lang, std::string& msg, Channel* channel) override
     {
-        if (sGlobalChatMgr->JoinChannel && !sGlobalChatMgr->ChatName.empty() && lang != LANG_ADDON && !strcmp(channel->GetName().c_str(), sGlobalChatMgr->ChatName.c_str()))
+        if (sGlobalChatMgr->JoinChannel && !sGlobalChatMgr->ChatName.empty() && lang != LANG_ADDON && channel->GetName() == sGlobalChatMgr->ChatName)
         {
             if (sGlobalChatMgr->FactionSpecific && player->GetSession()->GetSecurity() > 0)
             {
                 ChatHandler(player->GetSession()).PSendSysMessage("Please use |cff4CFF00.galliance|r or .|cff4CFF00ghorde|r for the GlobalChat as GM.");
-                msg = -1;
-                return;
+                return false;
             }
 
             sGlobalChatMgr->SendGlobalChat(player->GetSession(), msg.c_str());
-            msg = -1;
+            return false;
         }
+
+        return true;
     }
 };
 

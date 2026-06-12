@@ -21,6 +21,7 @@
 #include "DatabaseEnv.h"
 #include "GameTime.h"
 #include "World.h"
+#include "WorldSessionMgr.h"
 #include "GlobalChatMgr.h"
 #include "WorldSession.h"
 
@@ -253,7 +254,7 @@ void GlobalChatMgr::Ban(ObjectGuid guid)
 {
     playersChatData[guid].SetBanned(true);
     uint32 totalMutes = playersChatData[guid].GetTotalMutes();
-    playersChatData[guid].SetTotalMutes(totalMutes++);
+    playersChatData[guid].SetTotalMutes(totalMutes + 1);
 }
 
 void GlobalChatMgr::Unmute(ObjectGuid guid)
@@ -645,21 +646,20 @@ void GlobalChatMgr::SendToPlayers(std::string chatMessage, Player* player, TeamI
     LOG_DEBUG("module", "GlobalChat: Sending Message to Players.");
     std::string chatPrefix = GetChatPrefix();
     std::string gmChatPrefix = GetGMChatPrefix(teamId);
-    SessionMap sessions = sWorld->GetAllSessions();
-    for (SessionMap::iterator itr = sessions.begin(); itr != sessions.end(); ++itr)
+    for (auto const& [accId, session] : sWorldSessionMgr->GetAllSessions())
     {
-        if (!itr->second || !itr->second->GetPlayer() || !itr->second->GetPlayer()->IsInWorld())
+        if (!session || !session->GetPlayer() || !session->GetPlayer()->IsInWorld())
         {
             continue;
         }
 
-        Player* target = itr->second->GetPlayer();
+        Player* target = session->GetPlayer();
         ObjectGuid guid2 = target->GetGUID();
         std::string message;
 
         if (IsInChat(guid2))
         {
-            if (FactionSpecific && teamId != TEAM_NEUTRAL && itr->second->GetSecurity() > 0)
+            if (FactionSpecific && teamId != TEAM_NEUTRAL && session->GetSecurity() > 0)
             {
                 message = gmChatPrefix + " " + chatMessage;
                 sWorld->SendServerMessage(SERVER_MSG_STRING, message.c_str(), target);
@@ -679,7 +679,7 @@ void GlobalChatMgr::SendToPlayers(std::string chatMessage, Player* player, TeamI
     }
 }
 
-void GlobalChatMgr::SendGlobalChat(WorldSession* session, const char* message, TeamId toTeam)
+void GlobalChatMgr::SendGlobalChat(WorldSession* session, std::string_view message, TeamId toTeam)
 {
     Player* player;
 
@@ -782,9 +782,11 @@ void GlobalChatMgr::SendGlobalChat(WorldSession* session, const char* message, T
                 if (ProfanityMuteType >= 2)
                 {
                     int64 muteTime = GameTime::GetGameTime().count() + ProfanityMute;
-                    LoginDatabasePreparedStatement* mt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_MUTE_TIME);
+                    LoginDatabasePreparedStatement* mt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_MUTE_TIME_LOGIN);
                     session->m_muteTime = muteTime;
                     mt->SetData(0, muteTime);
+                    mt->SetData(1, session->GetAccountId());
+                    LoginDatabase.Execute(mt);
                 }
             }
             else
@@ -828,9 +830,11 @@ void GlobalChatMgr::SendGlobalChat(WorldSession* session, const char* message, T
                 if (URLMuteType >= 2)
                 {
                     int64 muteTime = GameTime::GetGameTime().count() + URLMute;
-                    LoginDatabasePreparedStatement* mt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_MUTE_TIME);
+                    LoginDatabasePreparedStatement* mt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_MUTE_TIME_LOGIN);
                     session->m_muteTime = muteTime;
                     mt->SetData(0, muteTime);
+                    mt->SetData(1, session->GetAccountId());
+                    LoginDatabase.Execute(mt);
                 }
             }
             else

@@ -32,7 +32,7 @@ class GlobalChatData;
 
 struct ChatProfanityEntry
 {
-    //uint32      ID;
+    uint32      ID;
     char const* Text;
     int32       Language;
 };
@@ -111,7 +111,7 @@ public:
     std::string GetClassColor(Player* player);
     std::string GetRaceIcon(Player* player);
 
-    void SendGlobalChat(WorldSession* session, const char* message, TeamId toTeam = TEAM_NEUTRAL);
+    void SendGlobalChat(WorldSession* session, std::string_view message, TeamId toTeam = TEAM_NEUTRAL);
 
     void PlayerJoinCommand(ChatHandler* handler);
     void PlayerLeaveCommand(ChatHandler* handler);
