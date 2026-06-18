@@ -100,10 +100,10 @@ public:
     void Unmute(ObjectGuid guid);
     void Ban(ObjectGuid guid);
 
-    bool HasForbiddenPhrase(std::string message);
-    bool HasForbiddenURL(std::string message);
-    std::string CensorForbiddenPhrase(std::string message);
-    std::string CensorForbiddenURL(std::string message);
+    bool HasForbiddenPhrase(std::string_view message);
+    bool HasForbiddenURL(std::string_view message);
+    std::string CensorForbiddenPhrase(std::string_view message);
+    std::string CensorForbiddenURL(std::string_view message);
 
     std::string GetFactionIcon(Player* player);
     std::string GetFactionColor(Player* player);

@@ -263,18 +263,24 @@ void GlobalChatMgr::Unmute(ObjectGuid guid)
     playersChatData[guid].SetMuteTime(0);
 }
 
-bool GlobalChatMgr::HasForbiddenPhrase(std::string message)
+bool GlobalChatMgr::HasForbiddenPhrase(std::string_view message)
 {
+    std::string msg{ message };
     for (auto const& regex : ProfanityBlacklist)
-        if (std::regex_search(message, regex.second))
+    {
+        if (std::regex_search(msg, regex.second))
+        {
             return true;
+        }
+    }
 
     return false;
 }
 
-bool GlobalChatMgr::HasForbiddenURL(std::string message)
+bool GlobalChatMgr::HasForbiddenURL(std::string_view message)
 {
-    auto words_begin = std::sregex_iterator(message.begin(), message.end(), urlRegex);
+    std::string msg{ message };
+    auto words_begin = std::sregex_iterator(msg.begin(), msg.end(), urlRegex);
     auto words_end = std::sregex_iterator();
 
     for (std::sregex_iterator i = words_begin; i != words_end; ++i)
@@ -282,7 +288,9 @@ bool GlobalChatMgr::HasForbiddenURL(std::string message)
         std::smatch match = *i;
 
         if (std::find(URLWhitelist.begin(), URLWhitelist.end(), match[3].str()) != URLWhitelist.end())
+        {
             continue;
+        }
 
         return true;
     }
@@ -290,14 +298,15 @@ bool GlobalChatMgr::HasForbiddenURL(std::string message)
     return false;
 }
 
-std::string GlobalChatMgr::CensorForbiddenPhrase(std::string message)
+std::string GlobalChatMgr::CensorForbiddenPhrase(std::string_view message)
 {
+    std::string messageStr{ message };
     std::ostringstream result;
     std::smatch match;
 
     for (auto const& regex : ProfanityBlacklist)
     {
-        if (std::regex_search(message, match, regex.second))
+        if (std::regex_search(messageStr, match, regex.second))
         {
             result << match.prefix();
 
@@ -306,19 +315,20 @@ std::string GlobalChatMgr::CensorForbiddenPhrase(std::string message)
                 result << std::string(match.str().size(), '*');
             }
 
-            return result.str() + CensorForbiddenPhrase(match.suffix());
+            return result.str() + CensorForbiddenPhrase(match.suffix().str());
         }
     }
 
-    return message;
+    return messageStr;
 }
 
-std::string GlobalChatMgr::CensorForbiddenURL(std::string message)
+std::string GlobalChatMgr::CensorForbiddenURL(std::string_view message)
 {
+    std::string messageStr{ message };
     std::ostringstream result;
     std::smatch match;
 
-    if (std::regex_search(message, match, urlRegex)) {
+    if (std::regex_search(messageStr, match, urlRegex)) {
         result << match.prefix();
 
         if (std::find(URLWhitelist.begin(), URLWhitelist.end(), match[5].str()) != URLWhitelist.end())
@@ -338,10 +348,10 @@ std::string GlobalChatMgr::CensorForbiddenURL(std::string message)
             }
         }
 
-        return result.str() + CensorForbiddenURL(match.suffix());
+        return result.str() + CensorForbiddenURL(match.suffix().str());
     }
 
-    return message;
+    return messageStr;
 }
 
 std::string GlobalChatMgr::GetFactionIcon(Player* player)
@@ -662,7 +672,7 @@ void GlobalChatMgr::SendToPlayers(std::string chatMessage, Player* player, TeamI
             if (FactionSpecific && teamId != TEAM_NEUTRAL && session->GetSecurity() > 0)
             {
                 message = gmChatPrefix + " " + chatMessage;
-                sWorld->SendServerMessage(SERVER_MSG_STRING, message.c_str(), target);
+                sWorldSessionMgr->SendServerMessage(SERVER_MSG_STRING, message.c_str(), target);
                 continue;
             }
 
@@ -673,7 +683,7 @@ void GlobalChatMgr::SendToPlayers(std::string chatMessage, Player* player, TeamI
             if (!FactionSpecific || teamId == TEAM_NEUTRAL || teamId == target->GetTeamId())
             {
                 message = chatPrefix + " " + chatMessage;
-                sWorld->SendServerMessage(SERVER_MSG_STRING, message.c_str(), target);
+                sWorldSessionMgr->SendServerMessage(SERVER_MSG_STRING, message.c_str(), target);
             }
         }
     }
@@ -684,7 +694,7 @@ void GlobalChatMgr::SendGlobalChat(WorldSession* session, std::string_view messa
     Player* player;
 
     std::string nameLink;
-    std::string chatText = message;
+    std::string chatText{ message };
     std::string chatContent;
 
     std::string chatColor = ChatTextColor.empty() ? "FFFFFF" : ChatTextColor;

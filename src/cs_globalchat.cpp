@@ -259,7 +259,7 @@ public:
         if (phrase.empty())
             return false;
 
-        QueryResult check = CharacterDatabase.Query("SELECT * FROM `globalchat_blacklist` WHERE `phrase` = '{}'", phrase);
+        QueryResult check = CharacterDatabase.Query("SELECT * FROM `globalchat_blacklist` WHERE `phrase` = '{}'", std::string_view(phrase));
         if (check)
         {
             handler->SendSysMessage("Phrase is already blacklisted.");
@@ -267,10 +267,10 @@ public:
             return true;
         }
 
-        CharacterDatabase.Query("INSERT INTO `globalchat_blacklist` VALUES ('{}')", phrase);
+        CharacterDatabase.Query("INSERT INTO `globalchat_blacklist` VALUES ('{}')", std::string_view(phrase));
         sGlobalChatMgr->ProfanityBlacklist[phrase.data()] = std::regex{phrase.data(), std::regex::icase | std::regex::optimize};
-        handler->PSendSysMessage("Phrase '%s' is now blacklisted in the GlobalChat.", phrase);
-        LOG_INFO("module", "GlobalChat: Phrase '{}' is now blacklisted.", phrase);
+        handler->PSendSysMessage("Phrase '%s' is now blacklisted in the GlobalChat.", phrase.data());
+        LOG_INFO("module", "GlobalChat: Phrase '{}' is now blacklisted.", std::string_view(phrase));
 
         return true;
     };
@@ -280,7 +280,7 @@ public:
         if (phrase.empty())
             return false;
 
-        QueryResult check = CharacterDatabase.Query("SELECT * FROM `globalchat_blacklist` WHERE `phrase` = '{}'", phrase);
+        QueryResult check = CharacterDatabase.Query("SELECT * FROM `globalchat_blacklist` WHERE `phrase` = '{}'", std::string_view(phrase));
         if (!check)
         {
             handler->SendSysMessage("Phrase is not blacklisted.");
@@ -288,10 +288,10 @@ public:
             return true;
         }
 
-        CharacterDatabase.Query("DELETE FROM `globalchat_blacklist` WHERE `phrase` = '{}'", phrase);
+        CharacterDatabase.Query("DELETE FROM `globalchat_blacklist` WHERE `phrase` = '{}'", std::string_view(phrase));
         sGlobalChatMgr->ProfanityBlacklist.erase(phrase.data());
-        handler->PSendSysMessage("Phrase '%s' is no longer blacklisted in the GlobalChat.", phrase);
-        LOG_INFO("module", "GlobalChat: Phrase '{}' is no longer blacklisted.", phrase);
+        handler->PSendSysMessage("Phrase '%s' is no longer blacklisted in the GlobalChat.", phrase.data());
+        LOG_INFO("module", "GlobalChat: Phrase '{}' is no longer blacklisted.", std::string_view(phrase));
 
         return true;
     };
